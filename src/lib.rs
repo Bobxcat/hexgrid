@@ -20,6 +20,8 @@ pub enum HexFace {
 }
 
 impl HexFace {
+    /// Returns the index of `self` within `Self::variants()`
+    #[inline]
     const fn to_idx(self) -> usize {
         use HexFace::*;
         match self {
@@ -32,11 +34,12 @@ impl HexFace {
         }
     }
 
+    #[inline]
     const fn from_idx(idx: usize) -> Self {
         Self::variants()[idx]
     }
 
-    /// All variants in counter-clockwise order
+    /// All variants in counter-clockwise order, starting with
     #[inline]
     pub const fn variants() -> [Self; 6] {
         use HexFace::*;

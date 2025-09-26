@@ -280,42 +280,17 @@ impl OffsetCoord {
 
     #[inline]
     pub const fn neighbor(self, dir: HexFace) -> Self {
-        use HexFace::*;
-        let even_row = self.row & 1 == 0;
-
-        // A
-
-        // let offset = match (dir, even_row) {
-        //     (Right, _) => (1, 0),
-        //     (UpRight, true) => (0, -1),
-        //     (UpRight, false) => (1, -1),
-        //     (UpLeft, true) => (-1, -1),
-        //     (UpLeft, false) => (0, -1),
-        //     (Left, _) => (-1, 0),
-        //     (DownLeft, true) => (-1, 1),
-        //     (DownLeft, false) => (0, 1),
-        //     (DownRight, true) => (0, 1),
-        //     (DownRight, false) => (1, 1),
-        // };
-
-        // B
-
-        let row_parity_col_offset =
-            if even_row || matches!(dir, HexFace::Left) || matches!(dir, HexFace::Right) {
-                0
-            } else {
-                1
-            };
-        let offset = match dir {
-            Right => (1, 0),
-            UpRight => (0, -1),
-            UpLeft => (-1, -1),
-            Left => (-1, 0),
-            DownLeft => (-1, 1),
-            DownRight => (0, 1),
+        let parity = self.row & 1;
+        let table = const {
+            [
+                // even rows
+                [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]],
+                // odd rows
+                [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]],
+            ]
         };
-        let offset = (offset.0 + row_parity_col_offset, offset.1);
-        Self::new(self.col + offset.0, self.row + offset.1)
+        let offset = table[parity as usize][dir.to_idx()];
+        Self::new(self.col + offset[0], self.row + offset[1])
     }
 
     #[inline]
