@@ -148,15 +148,16 @@ impl HexCoordBase for AxialCoord {
 
 /// Hexagonal Efficient Coordinate System (HECS)
 ///
-/// This is based off of the wikipedia article:
+/// This is based off of the wikipedia article: https://en.wikipedia.org/wiki/Hexagonal_Efficient_Coordinate_System
 ///
-/// For example, the diagram: https://en.wikipedia.org/wiki/File:HECS_Nearest_Neighbors.png
-/// is interpreted as the `DownRight` direction having coords `(a, r, c+1)`
-/// and the `Down` direction having coords `(1-a, r+a, c+a)`
+/// HECS is very similar to Offset, and converting between the two is very cheap
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct HecsCoord {
+    /// Parity
     pub a: i32,
+    /// Row
     pub r: i32,
+    /// Column
     pub c: i32,
 }
 
@@ -217,13 +218,18 @@ impl HecsCoord {
     }
 
     #[inline]
-    pub const fn from_axial(axial: AxialCoord) -> Self {
-        todo!()
+    pub const fn from_offset(offset: OffsetCoord) -> Self {
+        let odd_row = offset.row & 1;
+        Self {
+            a: odd_row,
+            r: (offset.row - odd_row) / 2,
+            c: offset.col,
+        }
     }
 
     #[inline]
-    pub const fn to_axial(self) -> AxialCoord {
-        todo!()
+    pub const fn to_offset(self) -> OffsetCoord {
+        OffsetCoord::new(self.c, self.r * 2 + self.a)
     }
 }
 
@@ -231,12 +237,21 @@ derive_ops_for_coord!(HecsCoord);
 impl HexCoordBase for HecsCoord {
     #[inline]
     fn from_axial(axial: AxialCoord) -> Self {
-        Self::from_axial(axial)
+        Self::from_offset(axial.to_offset())
     }
 
     #[inline]
     fn to_axial(self) -> AxialCoord {
-        self.to_axial()
+        self.to_offset().to_axial()
+    }
+
+    #[inline]
+    fn from_offset(offset: OffsetCoord) -> Self {
+        Self::from_offset(offset)
+    }
+    #[inline]
+    fn to_offset(self) -> OffsetCoord {
+        self.to_offset()
     }
 }
 
@@ -330,7 +345,7 @@ pub enum HexCoord {
 mod tests {
     use crate::{
         HexFace,
-        coord::{AxialCoord, HexCoordBase, OffsetCoord},
+        coord::{AxialCoord, HecsCoord, HexCoordBase, OffsetCoord},
     };
 
     #[test]
@@ -352,6 +367,32 @@ mod tests {
                 for dir in HexFace::variants() {
                     let start_axial = AxialCoord::new(i, j);
                     let start_offset = OffsetCoord::from_axial(start_axial);
+                    assert_eq!(
+                        start_axial.neighbor(dir),
+                        start_offset.neighbor(dir).to_axial()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn hecs_convert() {
+        for i in -10..10 {
+            for j in -10..10 {
+                let axial = AxialCoord::new(i, j);
+                assert_eq!(axial, HecsCoord::from_axial(axial).to_axial());
+            }
+        }
+    }
+
+    #[test]
+    fn hecs_travel() {
+        for i in -10..10 {
+            for j in -10..10 {
+                for dir in HexFace::variants() {
+                    let start_axial = AxialCoord::new(i, j);
+                    let start_offset = HecsCoord::from_axial(start_axial);
                     assert_eq!(
                         start_axial.neighbor(dir),
                         start_offset.neighbor(dir).to_axial()
