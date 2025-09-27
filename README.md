@@ -1,1 +1,1 @@
-This is a toy project, use [https://github.com/ManevilleF/hexx](hexx) instead
+This is a toy project, use [hexx](https://github.com/ManevilleF/hexx) instead
