@@ -1,0 +1,1 @@
+This is a toy project, use [https://github.com/ManevilleF/hexx](hexx) instead
